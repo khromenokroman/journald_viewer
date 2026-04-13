@@ -7,40 +7,6 @@
 
 using json = nlohmann::json;
 
-static std::string get_string(const json &j, const char *key, const std::string &fallback = "") {
-    if (!j.contains(key) || j.at(key).is_null()) {
-        return fallback;
-    }
-
-    const auto &v = j.at(key);
-    if (v.is_string()) {
-        return v.get<std::string>();
-    }
-
-    if (v.is_number_integer()) {
-        return std::to_string(v.get<long long>());
-    }
-
-    if (v.is_array()) {
-        std::string out;
-        bool first = true;
-        for (const auto &item: v) {
-            if (!first) {
-                out += ", ";
-            }
-            first = false;
-            if (item.is_string()) {
-                out += item.get<std::string>();
-            } else {
-                out += item.dump();
-            }
-        }
-        return out;
-    }
-
-    return v.dump();
-}
-
 static const char *color_for_priority(const std::string &p) {
     if (p == "0" || p == "1" || p == "2")
         return "\x1b[1;31m"; // emergency/alert/crit
@@ -55,73 +21,6 @@ static const char *color_for_priority(const std::string &p) {
     if (p == "7")
         return "\x1b[90m"; // debug
     return "\x1b[0m";
-}
-
-static std::string make_json_array_text(const std::string &text) {
-    std::string out;
-    out.reserve(text.size() + 2);
-
-    out.push_back('[');
-
-    bool in_string = false;
-    bool escape = false;
-    int depth = 0;
-    bool need_comma = false;
-
-    for (size_t i = 0; i < text.size(); ++i) {
-        const char c = text[i];
-
-        if (in_string) {
-            out.push_back(c);
-            if (escape) {
-                escape = false;
-            } else if (c == '\\') {
-                escape = true;
-            } else if (c == '"') {
-                in_string = false;
-            }
-            continue;
-        }
-
-        if (c == '"') {
-            in_string = true;
-            out.push_back(c);
-            continue;
-        }
-
-        if (c == '{') {
-            if (need_comma) {
-                out.push_back(',');
-            }
-            out.push_back(c);
-            ++depth;
-            need_comma = false;
-            continue;
-        }
-
-        if (c == '}') {
-            out.push_back(c);
-            --depth;
-            if (depth == 0) {
-                need_comma = true;
-            }
-            continue;
-        }
-
-        if (depth == 0) {
-            if (c == '{' || c == '}' || c == ',' || c == '[' || c == ']') {
-                continue;
-            }
-            if (std::isspace(static_cast<unsigned char>(c))) {
-                continue;
-            }
-        }
-
-        out.push_back(c);
-    }
-
-    out.push_back(']');
-    return out;
 }
 
 static std::string format_realtime_timestamp(const std::string &value) {
@@ -142,71 +41,64 @@ static std::string format_realtime_timestamp(const std::string &value) {
 #endif
 
         std::ostringstream oss;
-        oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S")
-            << '.' << std::setw(6) << std::setfill('0') << micros;
+        oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S") << '.' << std::setw(6) << std::setfill('0') << micros;
         return oss.str();
     } catch (...) {
         return value;
     }
 }
 
-int main(int argc, char *argv[]) {
-    const std::string path = (argc > 1) ? argv[1] : "journal.json";
-
-    std::ifstream in(path);
-    if (!in) {
-        fmt::print(stderr, "Не удалось открыть файл: {}\n", path);
-        return 1;
-    }
-
-    const std::string raw((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
-    const std::string wrapped = make_json_array_text(raw);
-
-    json root;
-    try {
-        root = json::parse(wrapped);
-    } catch (const std::exception &e) {
-        fmt::print(stderr, "Ошибка парсинга JSON: {}\n", e.what());
-        return 1;
-    }
-
-    if (!root.is_array()) {
-        fmt::print(stderr, "Ожидался JSON-массив объектов\n");
-        return 1;
-    }
-
+int main() {
     const std::string reset = "\x1b[0m";
     const std::string dim = "\x1b[90m";
     const std::string cyan = "\x1b[36m";
 
-    for (const auto &e: root) {
-        const std::string ts_raw = get_string(e, "__REALTIME_TIMESTAMP");
-        const std::string ts = format_realtime_timestamp(ts_raw);
-        const std::string host = get_string(e, "_HOSTNAME");
-        const std::string ident = get_string(e, "SYSLOG_IDENTIFIER", get_string(e, "_COMM"));
-        const std::string pid = get_string(e, "SYSLOG_PID", get_string(e, "_PID"));
-        const std::string msg = get_string(e, "MESSAGE");
-        const std::string prio = get_string(e, "PRIORITY", "6");
-
-        const char *msg_color = color_for_priority(prio);
-
-        if (!ts.empty()) {
-            fmt::print("{}{}{} ", dim, ts, reset);
-        }
-
-        if (!host.empty()) {
-            fmt::print("{}{}{} ", dim, host, reset);
-        }
-
-        if (!ident.empty()) {
-            if (!pid.empty()) {
-                fmt::print("{}{}[{}]{}: ", cyan, ident, pid, reset);
-            } else {
-                fmt::print("{}{}{}: ", cyan, ident, reset);
+    std::string line;
+    while (std::getline(std::cin, line)) {
+        try{
+            if (line.empty()) {
+                continue;
             }
-        }
 
-        fmt::print("{}{}{}\n", msg_color, msg, reset);
+            json e;
+            try {
+                e = json::parse(line);
+            } catch (const std::exception &ex) {
+                fmt::print(stderr, "Ошибка парсинга JSON строки: {}\n", ex.what());
+                throw;
+            }
+
+            auto ts_raw = e.at("__REALTIME_TIMESTAMP").get<std::string>();
+            auto ts = format_realtime_timestamp(ts_raw);
+            auto host = e.at("_HOSTNAME").get<std::string>();
+            auto ident = e.at("_COMM").get<std::string>();
+            auto pid = e.at("_PID").get<std::string>();
+            auto msg = e.at("MESSAGE").get<std::string>();
+            auto prio = e.at("PRIORITY").get<std::string>();
+
+            const char *msg_color = color_for_priority(prio);
+
+            if (!ts.empty()) {
+                fmt::print("{}{}{} ", dim, ts, reset);
+            }
+
+            if (!host.empty()) {
+                fmt::print("{}{}{} ", dim, host, reset);
+            }
+
+            if (!ident.empty()) {
+                if (!pid.empty()) {
+                    fmt::print("{}{}[{}]{}: ", cyan, ident, pid, reset);
+                } else {
+                    fmt::print("{}{}{}: ", cyan, ident, reset);
+                }
+            }
+
+            fmt::print("{}{}{}\n", msg_color, msg, reset);
+        }catch (std::exception &ex) {
+            fmt::print("Ошибка при разборе строки:\n{}\n{}\n", json::parse(line).dump(2),ex.what());
+            throw;
+        }
     }
 
     return 0;

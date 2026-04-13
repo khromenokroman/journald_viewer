@@ -48,57 +48,63 @@ static std::string format_realtime_timestamp(const std::string &value) {
 }
 
 int main() {
-    const std::string reset = "\x1b[0m";
-    const std::string dim = "\x1b[90m";
-    const std::string cyan = "\x1b[36m";
+    try {
+        std::string reset = "\x1b[0m";
+        std::string dim = "\x1b[90m";
+        std::string cyan = "\x1b[36m";
 
-    std::string line;
-    while (std::getline(std::cin, line)) {
-        try {
-            if (line.empty()) {
-                continue;
-            }
-
-            ::nlohmann::json e;
+        std::string line;
+        while (std::getline(std::cin, line)) {
             try {
-                e = ::nlohmann::json::parse(line);
-            } catch (const std::exception &ex) {
-                fmt::print(stderr, "Ошибка парсинга JSON строки: {}\n", ex.what());
+                if (line.empty()) {
+                    continue;
+                }
+
+                ::nlohmann::json json;
+                try {
+                    json = ::nlohmann::json::parse(line);
+                } catch (const std::exception &ex) {
+                    fmt::print(stderr, "Ошибка парсинга JSON строки: {}\n", ex.what());
+                    throw;
+                }
+
+                auto ts_raw = json.at("__REALTIME_TIMESTAMP").get<std::string>();
+                auto ts = format_realtime_timestamp(ts_raw);
+                auto host = json.at("_HOSTNAME").get<std::string>();
+                auto ident = json.at("_COMM").get<std::string>();
+                auto pid = json.at("_PID").get<std::string>();
+                auto msg = json.at("MESSAGE").get<std::string>();
+                auto prio = std::stoi(json.at("PRIORITY").get<std::string>());
+
+                const char *msg_color = color_for_priority(prio);
+
+                if (!ts.empty()) {
+                    fmt::print("{}{}{} ", dim, ts, reset);
+                }
+
+                if (!host.empty()) {
+                    fmt::print("{}{}{} ", dim, host, reset);
+                }
+
+                if (!ident.empty()) {
+                    if (!pid.empty()) {
+                        fmt::print("{}{}[{}]{}: ", cyan, ident, pid, reset);
+                    } else {
+                        fmt::print("{}{}{}: ", cyan, ident, reset);
+                    }
+                }
+
+                fmt::print("{}{}{}\n", msg_color, msg, reset);
+            } catch (std::exception &ex) {
+                fmt::print(stderr, "Ошибка при разборе строки:\n{}\n{}\n", ::nlohmann::json::parse(line).dump(2),
+                           ex.what());
                 throw;
             }
-
-            auto ts_raw = e.at("__REALTIME_TIMESTAMP").get<std::string>();
-            auto ts = format_realtime_timestamp(ts_raw);
-            auto host = e.at("_HOSTNAME").get<std::string>();
-            auto ident = e.at("_COMM").get<std::string>();
-            auto pid = e.at("_PID").get<std::string>();
-            auto msg = e.at("MESSAGE").get<std::string>();
-            auto prio = std::stoi(e.at("PRIORITY").get<std::string>());
-
-            const char *msg_color = color_for_priority(prio);
-
-            if (!ts.empty()) {
-                fmt::print("{}{}{} ", dim, ts, reset);
-            }
-
-            if (!host.empty()) {
-                fmt::print("{}{}{} ", dim, host, reset);
-            }
-
-            if (!ident.empty()) {
-                if (!pid.empty()) {
-                    fmt::print("{}{}[{}]{}: ", cyan, ident, pid, reset);
-                } else {
-                    fmt::print("{}{}{}: ", cyan, ident, reset);
-                }
-            }
-
-            fmt::print("{}{}{}\n", msg_color, msg, reset);
-        } catch (std::exception &ex) {
-            fmt::print("Ошибка при разборе строки:\n{}\n{}\n", ::nlohmann::json::parse(line).dump(2), ex.what());
-            throw;
         }
-    }
 
-    return 0;
+        return EXIT_SUCCESS;
+    } catch (std::exception const &ex) {
+        fmt::print(stderr, "Ошибка при работе программы: {}", ex.what());
+        return EXIT_FAILURE;
+    }
 }

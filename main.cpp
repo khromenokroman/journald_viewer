@@ -5,22 +5,25 @@
 #include <fmt/core.h>
 #include <nlohmann/json.hpp>
 
-using json = nlohmann::json;
-
-static const char *color_for_priority(const std::string &p) {
-    if (p == "0" || p == "1" || p == "2")
-        return "\x1b[1;31m"; // emergency/alert/crit
-    if (p == "3")
-        return "\x1b[31m"; // error
-    if (p == "4")
-        return "\x1b[1;33m"; // warning
-    if (p == "5")
-        return "\x1b[1;37m"; // notice
-    if (p == "6")
-        return "\x1b[37m"; // info
-    if (p == "7")
-        return "\x1b[90m"; // debug
-    return "\x1b[0m";
+static const char *color_for_priority(int p) {
+    switch (p) {
+        case 0:
+        case 1:
+        case 2:
+            return "\x1b[1;31m"; // emergency/alert/crit
+        case 3:
+            return "\x1b[31m"; // error
+        case 4:
+            return "\x1b[1;33m"; // warning
+        case 5:
+            return "\x1b[1;37m"; // notice
+        case 6:
+            return "\x1b[37m"; // info
+        case 7:
+            return "\x1b[90m"; // debug
+        default:
+            return "\x1b[0m";
+    }
 }
 
 static std::string format_realtime_timestamp(const std::string &value) {
@@ -55,14 +58,14 @@ int main() {
 
     std::string line;
     while (std::getline(std::cin, line)) {
-        try{
+        try {
             if (line.empty()) {
                 continue;
             }
 
-            json e;
+            ::nlohmann::json e;
             try {
-                e = json::parse(line);
+                e = ::nlohmann::json::parse(line);
             } catch (const std::exception &ex) {
                 fmt::print(stderr, "Ошибка парсинга JSON строки: {}\n", ex.what());
                 throw;
@@ -74,7 +77,7 @@ int main() {
             auto ident = e.at("_COMM").get<std::string>();
             auto pid = e.at("_PID").get<std::string>();
             auto msg = e.at("MESSAGE").get<std::string>();
-            auto prio = e.at("PRIORITY").get<std::string>();
+            auto prio = std::stoi(e.at("PRIORITY").get<std::string>());
 
             const char *msg_color = color_for_priority(prio);
 
@@ -95,8 +98,8 @@ int main() {
             }
 
             fmt::print("{}{}{}\n", msg_color, msg, reset);
-        }catch (std::exception &ex) {
-            fmt::print("Ошибка при разборе строки:\n{}\n{}\n", json::parse(line).dump(2),ex.what());
+        } catch (std::exception &ex) {
+            fmt::print("Ошибка при разборе строки:\n{}\n{}\n", ::nlohmann::json::parse(line).dump(2), ex.what());
             throw;
         }
     }

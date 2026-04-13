@@ -32,7 +32,7 @@ JournalDViewer::JournalDViewer() {
             auto ident = json.value("_COMM", "unknown");
             auto pid = json.value("_PID", "unknown");
             auto msg = json.at("MESSAGE").get<std::string>();
-            auto prio = std::stoi(json.at("PRIORITY").get<std::string>());
+            auto prio = std::stoi(json.value("PRIORITY", "6"));
 
             auto msg_color = color_for_priority(prio);
 

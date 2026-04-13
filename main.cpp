@@ -7,12 +7,12 @@
 
 using json = nlohmann::json;
 
-static std::string get_string(const json& j, const char* key, const std::string& fallback = "") {
+static std::string get_string(const json &j, const char *key, const std::string &fallback = "") {
     if (!j.contains(key) || j.at(key).is_null()) {
         return fallback;
     }
 
-    const auto& v = j.at(key);
+    const auto &v = j.at(key);
     if (v.is_string()) {
         return v.get<std::string>();
     }
@@ -24,7 +24,7 @@ static std::string get_string(const json& j, const char* key, const std::string&
     if (v.is_array()) {
         std::string out;
         bool first = true;
-        for (const auto& item : v) {
+        for (const auto &item: v) {
             if (!first) {
                 out += ", ";
             }
@@ -41,17 +41,23 @@ static std::string get_string(const json& j, const char* key, const std::string&
     return v.dump();
 }
 
-static const char* color_for_priority(const std::string& p) {
-    if (p == "0" || p == "1" || p == "2") return "\x1b[1;31m"; // emergency/alert/crit
-    if (p == "3") return "\x1b[31m";                            // error
-    if (p == "4") return "\x1b[33m";                            // warning
-    if (p == "5") return "\x1b[1;37m";                          // notice
-    if (p == "6") return "\x1b[37m";                            // info
-    if (p == "7") return "\x1b[90m";                            // debug
+static const char *color_for_priority(const std::string &p) {
+    if (p == "0" || p == "1" || p == "2")
+        return "\x1b[1;31m"; // emergency/alert/crit
+    if (p == "3")
+        return "\x1b[31m"; // error
+    if (p == "4")
+        return "\x1b[1;33m"; // warning
+    if (p == "5")
+        return "\x1b[1;37m"; // notice
+    if (p == "6")
+        return "\x1b[37m"; // info
+    if (p == "7")
+        return "\x1b[90m"; // debug
     return "\x1b[0m";
 }
 
-static std::string make_json_array_text(const std::string& text) {
+static std::string make_json_array_text(const std::string &text) {
     std::string out;
     out.reserve(text.size() + 2);
 
@@ -118,7 +124,33 @@ static std::string make_json_array_text(const std::string& text) {
     return out;
 }
 
-int main(int argc, char* argv[]) {
+static std::string format_realtime_timestamp(const std::string &value) {
+    if (value.empty()) {
+        return {};
+    }
+
+    try {
+        const auto us = std::stoll(value);
+        const std::time_t sec = static_cast<std::time_t>(us / 1000000);
+        const auto micros = static_cast<int>(us % 1000000);
+
+        std::tm tm{};
+#if defined(_WIN32)
+        localtime_s(&tm, &sec);
+#else
+        localtime_r(&sec, &tm);
+#endif
+
+        std::ostringstream oss;
+        oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S")
+            << '.' << std::setw(6) << std::setfill('0') << micros;
+        return oss.str();
+    } catch (...) {
+        return value;
+    }
+}
+
+int main(int argc, char *argv[]) {
     const std::string path = (argc > 1) ? argv[1] : "journal.json";
 
     std::ifstream in(path);
@@ -133,7 +165,7 @@ int main(int argc, char* argv[]) {
     json root;
     try {
         root = json::parse(wrapped);
-    } catch (const std::exception& e) {
+    } catch (const std::exception &e) {
         fmt::print(stderr, "Ошибка парсинга JSON: {}\n", e.what());
         return 1;
     }
@@ -147,15 +179,16 @@ int main(int argc, char* argv[]) {
     const std::string dim = "\x1b[90m";
     const std::string cyan = "\x1b[36m";
 
-    for (const auto& e : root) {
-        const std::string ts = get_string(e, "SYSLOG_TIMESTAMP", get_string(e, "__REALTIME_TIMESTAMP"));
+    for (const auto &e: root) {
+        const std::string ts_raw = get_string(e, "__REALTIME_TIMESTAMP");
+        const std::string ts = format_realtime_timestamp(ts_raw);
         const std::string host = get_string(e, "_HOSTNAME");
         const std::string ident = get_string(e, "SYSLOG_IDENTIFIER", get_string(e, "_COMM"));
         const std::string pid = get_string(e, "SYSLOG_PID", get_string(e, "_PID"));
         const std::string msg = get_string(e, "MESSAGE");
         const std::string prio = get_string(e, "PRIORITY", "6");
 
-        const char* msg_color = color_for_priority(prio);
+        const char *msg_color = color_for_priority(prio);
 
         if (!ts.empty()) {
             fmt::print("{}{}{} ", dim, ts, reset);

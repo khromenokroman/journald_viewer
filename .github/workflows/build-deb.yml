@@ -36,6 +36,11 @@ jobs:
         run: |
           cmake --build build -j$(nproc)
 
+      - name: Run tests
+        run: |
+          cd build
+          ctest --output-on-failure
+
       - name: Package DEB
         run: |
           cd build

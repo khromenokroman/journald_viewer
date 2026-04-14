@@ -51,9 +51,9 @@ jobs:
           retention-days: 7
 
   release:
-    needs: debian12
+    needs: build-debian12
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.create_release == 'true'
-    runs-on: ubuntu-24.04
+    runs-on: debian12
 
     steps:
       - name: Checkout

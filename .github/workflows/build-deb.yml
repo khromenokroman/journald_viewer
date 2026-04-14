@@ -14,7 +14,7 @@ on:
         type: boolean
 
 jobs:
-  build:
+  build-ubuntu2404:
     runs-on: ubuntu-24.04
 
     steps:
@@ -45,6 +45,42 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: journald-viewer-deb
+          path: |
+            build/*.deb
+            build/Version
+          retention-days: 7
+
+  build-astra18:
+    runs-on: astra18
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential cmake libfmt-dev nlohmann-json3-dev dpkg-dev
+
+      - name: Configure CMake
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
+
+      - name: Build
+        run: |
+          cmake --build build -j$(nproc)
+
+      - name: Package DEB
+        run: |
+          cd build
+          cpack -G DEB
+
+      - name: Upload DEB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: journald-viewer-deb-astra18
           path: |
             build/*.deb
             build/Version

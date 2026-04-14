@@ -29,7 +29,7 @@ JournalDViewer::JournalDViewer() {
             auto ts_raw = json.at("__REALTIME_TIMESTAMP").get<std::string>();
             auto ts = format_realtime_timestamp(ts_raw);
             auto host = json.at("_HOSTNAME").get<std::string>();
-            auto ident = json.value("_COMM", "unknown");
+            auto ident = json.value("SYSLOG_IDENTIFIER", json.at("_COMM").get<std::string>());
             auto pid = json.value("_PID", "unknown");
             auto msg = json.at("MESSAGE").get<std::string>();
             auto prio = std::stoi(json.value("PRIORITY", "6"));

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.26)
 project(journald-viewer
         VERSION 0.1.0
         LANGUAGES CXX
-        HOMEPAGE_URL "")
+        HOMEPAGE_URL "https://github.com/khromenokroman/journald_viewer")
 
 set(CMAKE_CXX_STANDARD 20)
 

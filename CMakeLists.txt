@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.26)
 project(journald-viewer
-        VERSION 0.0.3
+        VERSION 0.1.0
         LANGUAGES CXX
         HOMEPAGE_URL "")
 

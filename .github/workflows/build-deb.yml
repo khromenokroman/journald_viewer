@@ -14,8 +14,8 @@ on:
         type: boolean
 
 jobs:
-  build-astra18:
-    runs-on: astra18
+  build-debian12:
+    runs-on: debian12
 
     steps:
       - name: Checkout
@@ -44,14 +44,14 @@ jobs:
       - name: Upload DEB artifact
         uses: actions/upload-artifact@v4
         with:
-          name: journald-viewer-deb-astra18
+          name: journald-viewer-deb-debian12
           path: |
             build/*.deb
             build/Version
           retention-days: 7
 
   release:
-    needs: build-astra18
+    needs: debian12
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.create_release == 'true'
     runs-on: ubuntu-24.04
 
@@ -62,7 +62,7 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: journald-viewer-deb
+          name: journald-viewer-deb-debian12
           path: artifacts
 
       - name: Get version

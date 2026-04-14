@@ -6,7 +6,7 @@
 
 ### Пример использования
 ````bash
-bash journalctl --since="2026-04-13 23:50:53" --until="2026-04-13 23:54" --output=json | /usr/bin/journald-viewer | less
+journalctl --since="2026-04-13 23:50:53" --until="2026-04-13 23:54" --output=json | /usr/bin/journald-viewer | less
 ````
 
 

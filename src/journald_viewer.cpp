@@ -52,7 +52,24 @@ JournalDViewer::JournalDViewer() {
                 }
             }
 
-            fmt::print("{}{}{}\n", msg_color, msg, reset);
+            std::istringstream iss(msg);
+            std::string msg_line;
+            bool first_line = true;
+
+            while (std::getline(iss, msg_line)) {
+                if (first_line) {
+                    fmt::print("{}{}{}\n", msg_color, msg_line, reset);
+                    first_line = false;
+                } else {
+                    fmt::print("\t\t\t\t\t{}{}{}\n", msg_color, msg_line, reset);
+                }
+            }
+
+            if (msg.empty() || (!msg.empty() && msg.back() == '\n')) {
+                if (first_line) {
+                    fmt::print("{}{}\n", msg_color, reset);
+                }
+            }
         } catch (std::exception &ex) {
             fmt::print(stderr, "Ошибка при разборе строки:\n{}\n{}\n", ::nlohmann::json::parse(line).dump(2),
                        ex.what());

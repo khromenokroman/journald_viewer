@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.26)
+cmake_minimum_required(VERSION 3.25.1)
 project(journald-viewer
         VERSION 0.1.1
         LANGUAGES CXX

@@ -36,10 +36,12 @@ include(GNUInstallDirs)
 install(TARGETS ${PROJECT_NAME}
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
+enable_testing()
 add_executable(journald_viewer_tests
         tests/tests.cpp
 )
 target_link_libraries(journald_viewer_tests PRIVATE GTest::gtest GTest::gtest_main)
+add_test(NAME journald_viewer_tests COMMAND journald_viewer_tests)
 
 set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
 set(CPACK_PACKAGE_VENDOR "khromenokroman")

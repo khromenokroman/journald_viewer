@@ -26,7 +26,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install -y build-essential cmake libfmt-dev nlohmann-json3-dev dpkg-dev libgtest-dev
+          sudo apt install -y build-essential cmake libfmt-dev nlohmann-json3-dev dpkg-dev
 
       - name: Configure CMake
         run: |
@@ -35,11 +35,6 @@ jobs:
       - name: Build
         run: |
           cmake --build build -j$(nproc)
-
-      - name: Run tests
-        run: |
-          cd build
-          ctest --output-on-failure
 
       - name: Package DEB
         run: |

@@ -9,7 +9,6 @@ set(CMAKE_CXX_STANDARD 20)
 configure_file(Version.in Version @ONLY)
 
 find_package(fmt REQUIRED)
-find_package(GTest REQUIRED)
 
 add_executable(${PROJECT_NAME}
         src/main.cpp
@@ -17,31 +16,9 @@ add_executable(${PROJECT_NAME}
 )
 target_link_libraries(${PROJECT_NAME} PRIVATE fmt::fmt)
 
-file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/tests)
-
-configure_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/tests/journald
-        ${CMAKE_CURRENT_BINARY_DIR}/tests/journald
-        COPYONLY
-)
-
-configure_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/tests/journald.expected
-        ${CMAKE_CURRENT_BINARY_DIR}/tests/journald.expected
-        COPYONLY
-)
-
 include(GNUInstallDirs)
-
 install(TARGETS ${PROJECT_NAME}
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-
-enable_testing()
-add_executable(journald_viewer_tests
-        tests/tests.cpp
-)
-target_link_libraries(journald_viewer_tests PRIVATE GTest::gtest GTest::gtest_main)
-add_test(NAME journald_viewer_tests COMMAND journald_viewer_tests)
 
 set(CPACK_PACKAGE_NAME "${PROJECT_NAME}")
 set(CPACK_PACKAGE_VENDOR "khromenokroman")

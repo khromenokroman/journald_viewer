@@ -36,7 +36,10 @@ JournalDViewer::JournalDViewer() {
                 ident = json["_COMM"].get<std::string>();
             }
             auto pid = json.value("_PID", "unknown");
-            auto msg = json.at("MESSAGE").get<std::string>();
+            std::string msg;
+            if (json.contains("MESSAGE") && !json["MESSAGE"].is_null()) {
+                msg = json["MESSAGE"].get<std::string>();
+            }
             auto prio = std::stoi(json.value("PRIORITY", "6"));
 
             auto msg_color = color_for_priority(prio);

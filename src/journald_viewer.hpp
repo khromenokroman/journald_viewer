@@ -8,7 +8,7 @@
  * и выводит их с цветовым оформлением.
  */
 class JournalDViewer {
-public:
+   public:
     /**
      * @brief Запускает обработку входного потока journalctl.
      *
@@ -23,14 +23,13 @@ public:
     JournalDViewer &operator=(JournalDViewer const &) = delete;
     JournalDViewer &operator=(JournalDViewer &&) = delete;
 
-
-private:
+   private:
     /**
-    * @brief Возвращает ANSI-цвет для указанного приоритета syslog.
-    *
-    * @param p Приоритет сообщения журнала.
-    * @return ANSI escape-последовательность цвета.
-    */
+     * @brief Возвращает ANSI-цвет для указанного приоритета syslog.
+     *
+     * @param p Приоритет сообщения журнала.
+     * @return ANSI escape-последовательность цвета.
+     */
     std::string_view color_for_priority(int p);
     /**
      * @brief Преобразует timestamp из journalctl в строку с датой и временем.

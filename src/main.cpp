@@ -1,12 +1,11 @@
+#include <fmt/core.h>
+
 #include <fstream>
 #include <iostream>
+#include <nlohmann/json.hpp>
 #include <string>
 
-#include <fmt/core.h>
-#include <nlohmann/json.hpp>
-
 #include "journald_viewer.hpp"
-
 
 int main() {
     try {

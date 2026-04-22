@@ -1,6 +1,7 @@
 #include "journald_viewer.hpp"
 
 #include <fmt/format.h>
+
 #include <iomanip>
 #include <iostream>
 #include <nlohmann/json.hpp>
@@ -79,8 +80,7 @@ JournalDViewer::JournalDViewer() {
                 }
             }
         } catch (std::exception &ex) {
-            fmt::print(stderr, "Ошибка при разборе строки:\n{}\n{}\n", ::nlohmann::json::parse(line).dump(2),
-                       ex.what());
+            fmt::print(stderr, "Ошибка при разборе строки:\n{}\n{}\n", ::nlohmann::json::parse(line).dump(2), ex.what());
             throw;
         }
     }
